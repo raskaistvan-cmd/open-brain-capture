@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Open Brain – Rögzítés</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --border: #2a2a2a;
+      --accent: #6c63ff;
+      --accent-dim: #4a44b3;
+      --text: #e8e8e8;
+      --text-dim: #888;
+      --success: #22c55e;
+      --error: #ef4444;
+      --radius: 14px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 20px 20px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .logo span { color: var(--accent); }
+
+    #settings-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    main {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-width: 640px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.6;
+      padding: 16px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+
+    textarea:focus { border-color: var(--accent); }
+    textarea::placeholder { color: var(--text-dim); }
+
+    #submit-btn {
+      width: 100%;
+      padding: 18px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+      -webkit-appearance: none;
+    }
+
+    #submit-btn:active { background: var(--accent-dim); }
+    #submit-btn:disabled { opacity: 0.5; cursor: default; }
+
+    #status {
+      min-height: 56px;
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      font-size: 14px;
+      line-height: 1.5;
+      display: none;
+    }
+
+    #status.success {
+      display: block;
+      background: #0d2a1a;
+      border: 1px solid #1a5c35;
+      color: var(--success);
+    }
+
+    #status.error {
+      display: block;
+      background: #2a0d0d;
+      border: 1px solid #5c1a1a;
+      color: var(--error);
+    }
+
+    .meta-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .tag {
+      background: #1e2a1e;
+      border: 1px solid #2a4a2a;
+      color: #86efac;
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .tag.type {
+      background: #1e1e2a;
+      border-color: #2a2a5c;
+      color: #a5b4fc;
+    }
+
+    .tag.person {
+      background: #2a1e1e;
+      border-color: #5c2a2a;
+      color: #fca5a5;
+    }
+
+    /* Settings overlay */
+    #settings-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 100;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    #settings-overlay.open { display: flex; }
+
+    .settings-sheet {
+      background: var(--surface);
+      border-radius: var(--radius) var(--radius) 0 0;
+      padding: 24px 20px 40px;
+      width: 100%;
+      max-width: 640px;
+    }
+
+    .settings-sheet h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .field { margin-bottom: 16px; }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    .field input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 15px;
+      padding: 12px 14px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    .field input:focus { border-color: var(--accent); }
+
+    #save-settings-btn {
+      width: 100%;
+      padding: 16px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    #close-settings {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 14px;
+      border-radius: var(--radius);
+      font-size: 15px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .char-count {
+      text-align: right;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    #no-config {
+      background: #2a1e00;
+      border: 1px solid #5c3e00;
+      color: #fbbf24;
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      font-size: 14px;
+      display: none;
+    }
+
+    #no-config.show { display: block; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Open <span>Brain</span></div>
+  <button id="settings-btn">⚙ Beállítások</button>
+</header>
+
+<main>
+  <div id="no-config" class="show">
+    ⚠ Nincs beállítva API kulcs. Kattints a <strong>⚙ Beállítások</strong> gombra.
+  </div>
+
+  <textarea id="content" placeholder="Mi jár a fejedben? Írj ide gondolatot, feladatot, megfigyelést…" autocomplete="off" autocorrect="on" spellcheck="true"></textarea>
+
+  <div class="char-count"><span id="char-count">0</span> karakter</div>
+
+  <button id="submit-btn" disabled>Rögzítés →</button>
+
+  <div id="status"></div>
+</main>
+
+<!-- Settings overlay -->
+<div id="settings-overlay">
+  <div class="settings-sheet">
+    <h2>Beállítások</h2>
+    <div class="field">
+      <label>Supabase projekt URL</label>
+      <input id="cfg-url" type="url" placeholder="https://xxxx.supabase.co" inputmode="url">
+    </div>
+    <div class="field">
+      <label>API kulcs (x-brain-key)</label>
+      <input id="cfg-key" type="password" placeholder="••••••••••••">
+    </div>
+    <button id="save-settings-btn">Mentés</button>
+    <button id="close-settings">Mégse</button>
+  </div>
+</div>
+
+<script>
+  const FUNCTION_PATH = "/functions/v1/capture-web";
+
+  const $ = id => document.getElementById(id);
+
+  // --- Config (localStorage with in-memory fallback for file:// URLs) ---
+  const _mem = {};
+  const store = {
+    get(k) {
+      try { return localStorage.getItem(k); } catch { return _mem[k] ?? null; }
+    },
+    set(k, v) {
+      try { localStorage.setItem(k, v); } catch { _mem[k] = v; }
+    },
+  };
+
+  function loadConfig() {
+    return {
+      url: store.get("ob_url") || "",
+      key: store.get("ob_key") || "",
+    };
+  }
+
+  function saveConfig(url, key) {
+    store.set("ob_url", url.replace(/\/$/, ""));
+    store.set("ob_key", key);
+  }
+
+  function hasConfig() {
+    const { url, key } = loadConfig();
+    return url && key;
+  }
+
+  // --- UI state ---
+  function updateUI() {
+    const ok = hasConfig();
+    $("no-config").classList.toggle("show", !ok);
+    $("submit-btn").disabled = !ok || !$("content").value.trim();
+  }
+
+  // --- Settings ---
+  $("settings-btn").addEventListener("click", () => {
+    const { url, key } = loadConfig();
+    $("cfg-url").value = url;
+    $("cfg-key").value = key;
+    $("settings-overlay").classList.add("open");
+  });
+
+  $("close-settings").addEventListener("click", () => {
+    $("settings-overlay").classList.remove("open");
+  });
+
+  $("settings-overlay").addEventListener("click", e => {
+    if (e.target === $("settings-overlay")) $("settings-overlay").classList.remove("open");
+  });
+
+  $("save-settings-btn").addEventListener("click", () => {
+    const url = $("cfg-url").value.trim();
+    const key = $("cfg-key").value.trim();
+    if (!url || !key) return alert("Töltsd ki mindkét mezőt.");
+    saveConfig(url, key);
+    $("settings-overlay").classList.remove("open");
+    updateUI();
+  });
+
+  // --- Textarea ---
+  $("content").addEventListener("input", () => {
+    $("char-count").textContent = $("content").value.length;
+    updateUI();
+  });
+
+  // --- Submit ---
+  $("submit-btn").addEventListener("click", async () => {
+    const content = $("content").value.trim();
+    if (!content) return;
+
+    const { url, key } = loadConfig();
+    const btn = $("submit-btn");
+    const status = $("status");
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Rögzítés…';
+    status.className = "";
+    status.style.display = "none";
+
+    try {
+      const res = await fetch(url + FUNCTION_PATH, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-brain-key": key,
+        },
+        body: JSON.stringify({ content }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+      const m = data.metadata || {};
+      const topics = (m.topics || []).map(t => `<span class="tag">${t}</span>`).join("");
+      const people = (m.people || []).map(p => `<span class="tag person">${p}</span>`).join("");
+      const type = m.type ? `<span class="tag type">${m.type}</span>` : "";
+      const actions = (m.action_items || []).length
+        ? `<div style="margin-top:8px;font-size:13px;color:#86efac">✓ ${m.action_items.join(" · ")}</div>`
+        : "";
+
+      status.className = "success";
+      status.innerHTML = `
+        ✓ Rögzítve
+        <div class="meta-tags">${type}${topics}${people}</div>
+        ${actions}
+      `;
+
+      $("content").value = "";
+      $("char-count").textContent = "0";
+    } catch (err) {
+      status.className = "error";
+      status.textContent = "✗ Hiba: " + err.message;
+    }
+
+    btn.disabled = false;
+    btn.textContent = "Rögzítés →";
+    updateUI();
+  });
+
+  // --- Init ---
+  updateUI();
+</script>
+</body>
+</html>
